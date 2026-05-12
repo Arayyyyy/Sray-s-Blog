@@ -12,6 +12,7 @@ const InfoCard = (props) => {
         </div>
         <div className='text-2xl font-serif dark:text-white py-2 hover:scale-105 transform duration-200'>{siteConfig('AUTHOR')}</div>
         <div className='font-light dark:text-white py-2 hover:scale-105 transform duration-200 text-center'>{siteConfig('BIO')}</div>
+        <div className='text-sm italic text-gray-400 dark:text-gray-500 py-1'>「无限进步」</div>
         <SocialButton/>
     </div>
   </>
