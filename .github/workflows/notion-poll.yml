@@ -9,20 +9,13 @@ jobs:
   poll:
     runs-on: ubuntu-latest
     steps:
-      - name: Restore cached state
-        uses: actions/cache/restore@v4
-        with:
-          path: /tmp/notion_state.txt
-          key: notion-last-edited
-          restore-keys: notion-last-edited
-
       - name: Check Notion & trigger rebuild
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: eb06c844-9697-4560-a9e6-0cc298a427d9
           BUILD_HOOK_URL: https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/747e6878-7383-435f-b613-798954fee544
         run: |
-          # Query Notion for latest page by last_edited_time
+          # Query Notion for latest page
           RESPONSE=$(curl -s -X POST \
             "https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query" \
             -H "Authorization: Bearer ${NOTION_TOKEN}" \
@@ -31,23 +24,25 @@ jobs:
             -d '{"page_size": 1, "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}]}')
 
           CURRENT=$(echo "$RESPONSE" | grep -o '"last_edited_time":"[^"]*"' | head -1 | cut -d'"' -f4)
-          CACHED=$(cat /tmp/notion_state.txt 2>/dev/null || echo "")
+          echo "Latest last_edited_time: $CURRENT"
 
-          echo "Current: $CURRENT"
-          echo "Cached:  $CACHED"
+          # Compare with artifact state
+          LAST=$(cat last_edited.txt 2>/dev/null || echo "")
 
-          if [ "$CURRENT" != "$CACHED" ]; then
+          if [ "$CURRENT" != "$LAST" ]; then
             echo "Content changed! Triggering rebuild..."
-            echo "$CURRENT" > /tmp/notion_state.txt
+            echo "$CURRENT" > last_edited.txt
             curl -s -X POST "$BUILD_HOOK_URL"
             echo ""
-            echo "Rebuild triggered at $(date)"
           else
-            echo "No changes detected."
+            echo "No changes."
           fi
 
-      - name: Save state
-        uses: actions/cache/save@v4
+      - name: Upload state
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          path: /tmp/notion_state.txt
-          key: notion-last-edited
+          name: notion-state
+          path: last_edited.txt
+          overwrite: true
+          retention-days: 365
