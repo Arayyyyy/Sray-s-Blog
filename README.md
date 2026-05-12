@@ -110,4 +110,4 @@ The MIT License.
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=tangly1024/NotionNext&type=Date)](https://star-history.com/#tangly1024/NotionNext&Date)
-// trigger rebuild - add type and status
+// trigger rebuild - rename properties to lowercase
